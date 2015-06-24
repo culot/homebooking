@@ -71,20 +71,20 @@ The available commands are (when marked with *, command is not yet implemented):
               -r, --room <name>
                   Add a room, specifying its name
 
-  *remove*     Remove an entity from the booking system
-               The available options are:
+  remove      Remove an entity from the booking system
+              The available options are:
 
-               -b, --bed <name>
-                   Remove bed called <name>
+              -b, --bed <name>
+                  Remove bed called <name>
 
-               -f, --feature <name>
-                   Remove feature called <name>
+              -f, --feature <name>
+                  Remove feature called <name>
 
-               -g, --guest <nick>
-                   Remove guest whose nickname is <nick>
+              -g, --guest <nick>
+                  Remove guest whose nickname is <nick>
 
-               -r, --room <name>
-                   Remove room called <name>
+              -r, --room <name>
+                  Remove room called <name>
 
   *register*    Register a guest
 
@@ -310,6 +310,114 @@ class Database():
         cursor.execute("INSERT INTO BEDS (NAME,CAPACITY,FEATURE_ID,ROOM_ID) VALUES (:NAME,:CAPACITY,:FEATURE,:ROOM)",{"NAME":name,"CAPACITY":capacity,"FEATURE":feature_id,"ROOM":room_id})
         self.connection.commit()
         
+    def remove_bed(self, name):
+        log.info('Removing bed [%s] from the database', name)
+        cursor = self.connection.cursor()
+
+        # First check that the bed exists and fetch the corresponding id
+        bed_id = None
+        cursor.execute("SELECT BED_ID FROM BEDS WHERE NAME=:NAME",{"NAME": name})
+        bed_id = cursor.fetchone()
+        if bed_id == None:
+            print "Bed [%s] does not exist!" % name
+            log.warn('Bed [%s] does not exist!', name)
+            exit(1)
+        bed_id = bed_id["BED_ID"]
+
+        # Now check if bookings exist for this bed, in which case they must be removed first
+        cursor.execute("SELECT COUNT(*) AS NB_BOOKINGS FROM BOOKINGS WHERE BED_ID = :ID",{"ID":bed_id})
+        resultset = cursor.fetchone()
+        if resultset != None:
+            nb_bookings = resultset["NB_BOOKINGS"]
+            if nb_bookings != 0:
+                print "Some bookings exist for this bed, please remove them first!"
+                log.warn('Bookings registered for bed [%s], can\'t remove it', name)
+                exit(1)
+
+        cursor.execute("DELETE FROM BEDS WHERE BED_ID = :ID",{"ID":bed_id})
+        self.connection.commit()
+
+    def remove_feature(self, name):
+        log.info('Removing feature [%s] from the database', name)
+        cursor = self.connection.cursor()
+
+        # First check that the feature exists and fetch the corresponding id
+        feature_id = None
+        cursor.execute("SELECT FEATURE_ID FROM FEATURES WHERE NAME=:NAME",{"NAME": name})
+        feature_id = cursor.fetchone()
+        if feature_id == None:
+            print "Feature [%s] does not exist!" % name
+            log.warn('Feature [%s] does not exist!', name)
+            exit(1)
+        feature_id = feature_id["FEATURE_ID"]
+
+        # Now check if beds have this feature, in which case they must be removed first
+        cursor.execute("SELECT COUNT(*) AS NB_BEDS FROM BEDS WHERE FEATURE_ID = :ID",{"ID":feature_id})
+        resultset = cursor.fetchone()
+        if resultset != None:
+            nb_beds = resultset["NB_BEDS"]
+            if nb_beds != 0:
+                print "Some beds are registered with this feature, please remove them first!"
+                log.warn('Beds registered with feature [%s], can\'t remove it', name)
+                exit(1)
+
+        cursor.execute("DELETE FROM FEATURES WHERE FEATURE_ID = :ID",{"ID":feature_id})
+        self.connection.commit()
+
+    def remove_guest(self, nickname):
+        log.info('Removing guest [%s] from the database', nickname)
+        cursor = self.connection.cursor()
+
+        # First check that the guest exists and fetch the corresponding id
+        guest_id = None
+        cursor.execute("SELECT GUEST_ID FROM GUESTS WHERE NICKNAME=:NAME",{"NAME": nickname})
+        guest_id = cursor.fetchone()
+        if guest_id == None:
+            print "Guest [%s] does not exist!" % nickname
+            log.warn('Guest [%s] does not exist!', nickname)
+            exit(1)
+        guest_id = guest_id["GUEST_ID"]
+
+        # Now check if bookings exist for this guest, in which case they must be removed first
+        cursor.execute("SELECT COUNT(*) AS NB_BOOKINGS FROM BOOKINGS WHERE GUEST_ID = :ID",{"ID":guest_id})
+        resultset = cursor.fetchone()
+        if resultset != None:
+            nb_bookings = resultset["NB_BOOKINGS"]
+            if nb_bookings != 0:
+                print "Some bookings exist for this guest, please remove them first!"
+                log.warn('Bookings registered for guest [%s], can\'t remove it', nickname)
+                exit(1)
+
+        cursor.execute("DELETE FROM GUESTS WHERE GUEST_ID = :ID",{"ID":guest_id})
+        self.connection.commit()
+
+    def remove_room(self, name):
+        log.info('Removing room [%s] from the database', name)
+        cursor = self.connection.cursor()
+
+        # First check that the room exists and fetch the corresponding id
+        room_id = None
+        cursor.execute("SELECT ROOM_ID FROM ROOMS WHERE NAME=:NAME",{"NAME": name})
+        room_id = cursor.fetchone()
+        if room_id == None:
+            print "Room [%s] does not exist!" % name
+            log.warn('Room [%s] does not exist!', name)
+            exit(1)
+        room_id = room_id["ROOM_ID"]
+
+        # Now check if beds are found for this room, in which case they must be removed first
+        cursor.execute("SELECT COUNT(*) AS NB_BEDS FROM BEDS WHERE ROOM_ID = :ID",{"ID":room_id})
+        resultset = cursor.fetchone()
+        if resultset != None:
+            nb_beds = resultset["NB_BEDS"]
+            if nb_beds != 0:
+                print "Some beds are registered for this room, please remove them first!"
+                log.warn('Beds registered for room [%s], can\'t remove it', name)
+                exit(1)
+
+        cursor.execute("DELETE FROM ROOMS WHERE ROOM_ID = :ID",{"ID":room_id})
+        self.connection.commit()
+
     def list_room(self, name):
         log.info('Listing bookings for room [%s]', name)
         cursor = self.connection.cursor()
@@ -396,8 +504,26 @@ class Processing():
 
     @staticmethod
     def command_remove(options):
-        pass        
-        
+        if options.bed:
+            bed_name = options.bed[0]
+            with Database() as db:
+                db.remove_bed(bed_name)
+
+        if options.feature:
+            feature_name = options.feature[0]
+            with Database() as db:
+                db.remove_feature(feature_name)
+
+        if options.guest:
+            guest_name = options.guest[0]
+            with Database() as db:
+                db.remove_guest(guest_name)
+
+        if options.room:
+            room_name = options.room[0]
+            with Database() as db:
+                db.remove_room(room_name)
+
     @staticmethod
     def command_list(options):
         if options.room:
