@@ -238,15 +238,63 @@ class Database():
 
     def list_room(self, name):
         log.info('Listing bookings for room [%s]', name)
-        cursor = self.connection.cursor()
+        try:
+            room_id = self._get_room_id(name)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
+
         query = '''
-            select * from BOOKINGS where BED_ID in (
-                select BED_ID from BEDS where ROOM_ID = (select ROOM_ID from ROOMS where NAME=:ROOM_NAME)
-            )'''
-        cursor.execute(query,{"ROOM_NAME": name})
+            SELECT GUESTS.NICKNAME, BEDS.NAME, BOOKINGS.DATE
+            FROM BOOKINGS 
+            JOIN GUESTS ON (GUESTS.GUEST_ID = BOOKINGS.GUEST_ID)
+            JOIN BEDS ON (BEDS.BED_ID = BOOKINGS.BED_ID)
+            WHERE BEDS.BED_ID IN
+                (SELECT BED_ID FROM BEDS WHERE ROOM_ID = :ROOM_ID)
+            '''
+        cursor = self.connection.cursor()
+        cursor.execute(query,{"ROOM_ID": room_id})
         rows = cursor.fetchall()
         for row in rows:
-            print "Room id: %d, Room name: %s" % (row["ROOM_ID"], row["NAME"])
+            print "Guest [%s], Bed [%s], Date [%s]" % (row["NICKNAME"], row["NAME"], row["DATE"])
+
+    def list_guest(self, nick):
+        log.info('Listing bookings for guest [%s]', nick)
+        try:
+            guest_id = self._get_guest_id(nick)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
+
+        query = '''
+            SELECT GUESTS.NICKNAME, BEDS.NAME, BOOKINGS.DATE
+            FROM BOOKINGS 
+            JOIN GUESTS ON (GUESTS.GUEST_ID = BOOKINGS.GUEST_ID)
+            JOIN BEDS ON (BEDS.BED_ID = BOOKINGS.BED_ID)
+            WHERE GUESTS.GUEST_ID = :GUEST_ID
+            '''
+        cursor = self.connection.cursor()
+        cursor.execute(query,{"GUEST_ID": guest_id})
+        rows = cursor.fetchall()
+        for row in rows:
+            print "Guest [%s], Bed [%s], Date [%s]" % (row["NICKNAME"], row["NAME"], row["DATE"])
+
+    def list_date(self, date):
+        log.info('Listing bookings for date [%s]', date)
+        query = '''
+            SELECT GUESTS.NICKNAME, BEDS.NAME, BOOKINGS.DATE
+            FROM BOOKINGS 
+            JOIN GUESTS ON (GUESTS.GUEST_ID = BOOKINGS.GUEST_ID)
+            JOIN BEDS ON (BEDS.BED_ID = BOOKINGS.BED_ID)
+            WHERE DATE = :DATE
+            '''
+        cursor = self.connection.cursor()
+        cursor.execute(query,{"DATE": date})
+        rows = cursor.fetchall()
+        for row in rows:
+            print "Guest [%s], Bed [%s], Date [%s]" % (row["NICKNAME"], row["NAME"], row["DATE"])
 
     def show_entity(self, entity):
         print "%s:" % entity

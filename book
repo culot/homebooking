@@ -8,6 +8,7 @@ TODO
   - pretty print rows in the "show" command
   - add an utils module (with method to log and exit)
   - implement "collision" detection when registering a booking
+  - allow to book for a range of dates
 """
 
 __author__  = "Frederic Culot"

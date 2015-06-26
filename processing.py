@@ -85,6 +85,14 @@ class Processing():
             room_name = options.room[0]
             with Storage() as store:
                 store.list_room(room_name)
+        if options.guest:
+            guest_nick = options.guest[0]
+            with Storage() as store:
+                store.list_guest(guest_nick)
+        if options.date:
+            date = options.date[0]
+            with Storage() as store:
+                store.list_date(date)
 
     @staticmethod
     def command_show(options):
