@@ -83,40 +83,62 @@ class Database():
 
     def add_bed(self, name, capacity, room = None, feature = None):
         log.info('Adding bed [%s] to the database', name)
-        cursor = self.connection.cursor()
+
         # First check that the room and feature exists and fetch the corresponding ids
-        room_id = None
-        feature_id = None
         if room:
-            cursor.execute("SELECT ROOM_ID FROM ROOMS WHERE NAME=:NAME",{"NAME": room})
-            room_id = cursor.fetchone()
-            if room_id == None:
-                print "Room [%s] does not exist!" % room
+            try:
+                room_id = self._get_room_id(room)
+            except ValueError as e:
+                print str(e)
+                log.warn(str(e))
                 exit(1)
-            room_id = room_id["ROOM_ID"]
+        else:
+            room_id = None
+
         if feature:
-            cursor.execute("SELECT * FROM FEATURES WHERE NAME=:NAME",{"NAME": feature})
-            feature_id = cursor.fetchone()
-            if feature_id == None:
-                print "Feature [%s] does not exist!" % feature
+            try:
+                feature_id = self._get_feature_id(feature)
+            except ValueError as e:
+                print str(e)
+                log.warn(str(e))
                 exit(1)
-            feature_id = feature_id["FEATURE_ID"]
+        else:
+            feature_id = None
+
+        cursor = self.connection.cursor()
         cursor.execute("INSERT INTO BEDS (NAME,CAPACITY,FEATURE_ID,ROOM_ID) VALUES (:NAME,:CAPACITY,:FEATURE,:ROOM)",{"NAME":name,"CAPACITY":capacity,"FEATURE":feature_id,"ROOM":room_id})
         self.connection.commit()
-        
+
+    def register(self, guest, bed, date):
+        log.info('Registering guest [%s] in bed [%s] on [%s]')
+
+        try:
+            guest_id = self._get_guest_id(guest)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
+
+        try:
+            bed_id = self._get_bed_id(bed)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
+
+        cursor = self.connection.cursor()
+        cursor.execute("INSERT INTO BOOKINGS (GUEST_ID,BED_ID,DATE) VALUES (:GUEST,:BED,:DATE)",{"GUEST":guest_id,"BED":bed_id,"DATE":date})
+        self.connection.commit()
+
     def remove_bed(self, name):
         log.info('Removing bed [%s] from the database', name)
         cursor = self.connection.cursor()
-
-        # First check that the bed exists and fetch the corresponding id
-        bed_id = None
-        cursor.execute("SELECT BED_ID FROM BEDS WHERE NAME=:NAME",{"NAME": name})
-        bed_id = cursor.fetchone()
-        if bed_id == None:
-            print "Bed [%s] does not exist!" % name
-            log.warn('Bed [%s] does not exist!', name)
+        try:
+            bed_id = self._get_bed_id(name)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
             exit(1)
-        bed_id = bed_id["BED_ID"]
 
         # Now check if bookings exist for this bed, in which case they must be removed first
         cursor.execute("SELECT COUNT(*) AS NB_BOOKINGS FROM BOOKINGS WHERE BED_ID = :ID",{"ID":bed_id})
@@ -135,15 +157,12 @@ class Database():
         log.info('Removing feature [%s] from the database', name)
         cursor = self.connection.cursor()
 
-        # First check that the feature exists and fetch the corresponding id
-        feature_id = None
-        cursor.execute("SELECT FEATURE_ID FROM FEATURES WHERE NAME=:NAME",{"NAME": name})
-        feature_id = cursor.fetchone()
-        if feature_id == None:
-            print "Feature [%s] does not exist!" % name
-            log.warn('Feature [%s] does not exist!', name)
+        try:
+            feature_id = self._get_feature_id(name)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
             exit(1)
-        feature_id = feature_id["FEATURE_ID"]
 
         # Now check if beds have this feature, in which case they must be removed first
         cursor.execute("SELECT COUNT(*) AS NB_BEDS FROM BEDS WHERE FEATURE_ID = :ID",{"ID":feature_id})
@@ -162,15 +181,12 @@ class Database():
         log.info('Removing guest [%s] from the database', nickname)
         cursor = self.connection.cursor()
 
-        # First check that the guest exists and fetch the corresponding id
-        guest_id = None
-        cursor.execute("SELECT GUEST_ID FROM GUESTS WHERE NICKNAME=:NAME",{"NAME": nickname})
-        guest_id = cursor.fetchone()
-        if guest_id == None:
-            print "Guest [%s] does not exist!" % nickname
-            log.warn('Guest [%s] does not exist!', nickname)
+        try:
+            guest_id = self._get_guest_id(nickname)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
             exit(1)
-        guest_id = guest_id["GUEST_ID"]
 
         # Now check if bookings exist for this guest, in which case they must be removed first
         cursor.execute("SELECT COUNT(*) AS NB_BOOKINGS FROM BOOKINGS WHERE GUEST_ID = :ID",{"ID":guest_id})
@@ -189,15 +205,12 @@ class Database():
         log.info('Removing room [%s] from the database', name)
         cursor = self.connection.cursor()
 
-        # First check that the room exists and fetch the corresponding id
-        room_id = None
-        cursor.execute("SELECT ROOM_ID FROM ROOMS WHERE NAME=:NAME",{"NAME": name})
-        room_id = cursor.fetchone()
-        if room_id == None:
-            print "Room [%s] does not exist!" % name
-            log.warn('Room [%s] does not exist!', name)
+        try:
+            room_id = self._get_room_id(name)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
             exit(1)
-        room_id = room_id["ROOM_ID"]
 
         # Now check if beds are found for this room, in which case they must be removed first
         cursor.execute("SELECT COUNT(*) AS NB_BEDS FROM BEDS WHERE ROOM_ID = :ID",{"ID":room_id})
@@ -234,7 +247,7 @@ class Database():
             print "\t",
             print row
         print "\n"
-        
+
     def stats_number(self):
         log.info('Gathering database statistics')
         cursor = self.connection.cursor()
@@ -247,7 +260,38 @@ class Database():
             count = cursor.fetchone()
             print "%s | %d" % (table, count["NUM"])
 
-        
     def dump(self):
         for line in self.connection.iterdump():
             print "%s\n" % line
+
+    def _get_room_id(self, room_name):
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT ROOM_ID FROM ROOMS WHERE NAME=:NAME",{"NAME": room_name})
+        resultset = cursor.fetchone()
+        if resultset == None:
+            raise ValueError('Room [%s] not found' % name)
+        return resultset["ROOM_ID"]
+
+    def _get_guest_id(self, guest_nick):
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT GUEST_ID FROM GUESTS WHERE NICKNAME=:NAME",{"NAME": guest_nick})
+        resultset = cursor.fetchone()
+        if resultset == None:
+            raise ValueError('Guest [%s] not found' % guest_nick)
+        return resultset["GUEST_ID"]
+
+    def _get_bed_id(self, bed_name):
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT BED_ID FROM BEDS WHERE NAME=:NAME",{"NAME": bed_name})
+        resultset = cursor.fetchone()
+        if resultset == None:
+            raise ValueError('Bed [%s] not found' % bed_name)
+        return resultset["BED_ID"]
+
+    def _get_feature_id(self, feature_name):
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM FEATURES WHERE NAME=:NAME",{"NAME": feature_name})
+        resultset = cursor.fetchone()
+        if resultset == None:
+            raise ValueError("Feature [%s] not found" % feature_name)
+        return resultset["FEATURE_ID"]

@@ -6,6 +6,8 @@ Booking system backend
 TODO
   - use objects to manage each database table (room, bed, feature...)
   - pretty print rows in the "show" command
+  - add an utils module (with method to log and exit)
+  - implement "collision" detection when registering a booking
 """
 
 __author__  = "Frederic Culot"

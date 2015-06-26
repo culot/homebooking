@@ -65,13 +65,25 @@ The available commands are (when marked with *, command is not yet implemented):
               -r, --room <name>
                   Remove room called <name>
 
-  *register*    Register a guest
+  register    Register a guest
+              The following options are mandatory to register a guest
+              for the specified bed at the specified date:
+
+              -g, --guest <nick>
+              -b, --bed <name>
+              -d, --date <date>
 
   *unregister* Unregister a guest
+              Mandatory options are the same as when registering a
+              guest:
+
+              -g, --guest <nick>
+              -b, --bed <name>
+              -d, --date <date>
 
   *list*      List bookings based on user-provided options
               The available options are: 
-            
+
               -d, --date  <date>
                   Search for the specified date
 
@@ -92,13 +104,13 @@ The available commands are (when marked with *, command is not yet implemented):
 
               -f, --feature
                   Show features
-                  
+
               -g, --guest
                   Show guests
 
               -r, --room
                   Show rooms
-  
+
   stats       Display statistics about objects stored in database
               The available options are:
 
@@ -137,7 +149,16 @@ The available commands are (when marked with *, command is not yet implemented):
         self.options = args
 
     def register(self):
-        pass
+        parser = argparse.ArgumentParser(description = 'Register a guest in the booking system')
+        parser.add_argument("-g", "--guest", nargs = 1)
+        parser.add_argument("-b", "--bed", nargs = 1)
+        parser.add_argument("-d", "--date", nargs = 1)
+        args = parser.parse_args(sys.argv[2:])
+        if not args.guest or not args.bed or not args.date:
+            print "A guest name, bed name, and a date must be provided!"
+            print 'Try: book --help'
+            exit(1)
+        self.options = args
 
     def unregister(self):
         pass
