@@ -259,6 +259,29 @@ class Database():
         for row in rows:
             print "Guest [%s], Bed [%s], Date [%s]" % (row["NICKNAME"], row["NAME"], row["DATE"])
 
+    def list_bed(self, name):
+        log.info('Listing bookings for bed [%s]', name)
+        try:
+            bed_id = self._get_bed_id(name)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
+
+        query = '''
+            SELECT GUESTS.NICKNAME, BEDS.NAME, BOOKINGS.DATE
+            FROM BOOKINGS 
+            JOIN GUESTS ON (GUESTS.GUEST_ID = BOOKINGS.GUEST_ID)
+            JOIN BEDS ON (BEDS.BED_ID = BOOKINGS.BED_ID)
+            WHERE BEDS.BED_ID = :BED_ID
+            '''
+        cursor = self.connection.cursor()
+        cursor.execute(query,{"BED_ID": bed_id})
+        rows = cursor.fetchall()
+        for row in rows:
+            print "Guest [%s], Bed [%s], Date [%s]" % (row["NICKNAME"], row["NAME"], row["DATE"])
+
+
     def list_guest(self, nick):
         log.info('Listing bookings for guest [%s]', nick)
         try:

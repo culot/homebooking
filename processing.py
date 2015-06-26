@@ -85,6 +85,10 @@ class Processing():
             room_name = options.room[0]
             with Storage() as store:
                 store.list_room(room_name)
+        if options.bed:
+            bed_name = options.bed[0]
+            with Storage() as store:
+                store.list_bed(bed_name)
         if options.guest:
             guest_nick = options.guest[0]
             with Storage() as store:

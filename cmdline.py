@@ -93,6 +93,9 @@ The available commands are (when marked with *, command is not yet implemented):
               -r, --room <name>
                   Search for the specified room
 
+              -b, --bed <name>
+                  Search for the specified bed
+
   search      Search for beds availabilities
               The following option is mandatory:
 
@@ -180,8 +183,9 @@ The available commands are (when marked with *, command is not yet implemented):
         parser.add_argument("-g", "--guest", nargs = 1)
         parser.add_argument("-d", "--date", nargs = 1)
         parser.add_argument("-r", "--room", nargs = 1)
+        parser.add_argument("-b", "--bed", nargs = 1)
         args = parser.parse_args(sys.argv[2:])
-        if not args.guest and not args.date and not args.room:
+        if not args.guest and not args.date and not args.room and not args.bed:
             print "At least one option is required!"
             print 'Try: book --help'
             exit(1)
