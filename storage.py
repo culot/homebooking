@@ -110,7 +110,7 @@ class Database():
         self.connection.commit()
 
     def register(self, guest, bed, date):
-        log.info('Registering guest [%s] in bed [%s] on [%s]')
+        log.info('Registering guest [%s] for bed [%s] on [%s]')
 
         try:
             guest_id = self._get_guest_id(guest)
@@ -128,6 +128,20 @@ class Database():
 
         cursor = self.connection.cursor()
         cursor.execute("INSERT INTO BOOKINGS (GUEST_ID,BED_ID,DATE) VALUES (:GUEST,:BED,:DATE)",{"GUEST":guest_id,"BED":bed_id,"DATE":date})
+        self.connection.commit()
+
+    def unregister(self, guest, bed, date):
+        log.info('Unregistering guest [%s] for bed [%s] on [%s]')
+
+        try:
+            booking_id = self._get_booking_id(guest, bed, date)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
+
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM BOOKINGS WHERE BOOKING_ID = :ID",{"ID":booking_id})
         self.connection.commit()
 
     def remove_bed(self, name):
@@ -290,8 +304,18 @@ class Database():
 
     def _get_feature_id(self, feature_name):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM FEATURES WHERE NAME=:NAME",{"NAME": feature_name})
+        cursor.execute("SELECT FEATURE_ID FROM FEATURES WHERE NAME=:NAME",{"NAME": feature_name})
         resultset = cursor.fetchone()
         if resultset == None:
             raise ValueError("Feature [%s] not found" % feature_name)
         return resultset["FEATURE_ID"]
+
+    def _get_booking_id(self, guest, bed, date):
+        guest_id = self._get_guest_id(guest)
+        bed_id = self._get_bed_id(bed)
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT BOOKING_ID FROM BOOKINGS WHERE GUEST_ID=:GUEST_ID AND BED_ID=:BED_ID AND DATE=:DATE",{"GUEST_ID":guest_id,"BED_ID":bed_id,"DATE":date})
+        resultset = cursor.fetchone()
+        if resultset == None:
+            raise ValueError("Booking for guest [%s] and bed [%s] on [%s] not found" % (guest,bed,date))
+        return resultset["BOOKING_ID"]

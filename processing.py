@@ -50,6 +50,14 @@ class Processing():
 	    store.register(guest_nick, bed_name, date)
 
     @staticmethod
+    def command_unregister(options):
+	guest_nick = options.guest[0]
+	bed_name = options.bed[0]
+	date = options.date[0]
+	with Storage() as store:
+	    store.unregister(guest_nick, bed_name, date)
+
+    @staticmethod
     def command_remove(options):
         if options.bed:
             bed_name = options.bed[0]

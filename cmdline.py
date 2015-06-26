@@ -73,7 +73,7 @@ The available commands are (when marked with *, command is not yet implemented):
               -b, --bed <name>
               -d, --date <date>
 
-  *unregister* Unregister a guest
+  unregister  Unregister a guest
               Mandatory options are the same as when registering a
               guest:
 
@@ -161,7 +161,16 @@ The available commands are (when marked with *, command is not yet implemented):
         self.options = args
 
     def unregister(self):
-        pass
+        parser = argparse.ArgumentParser(description = 'Unregister a guest from the booking system')
+        parser.add_argument("-g", "--guest", nargs = 1)
+        parser.add_argument("-b", "--bed", nargs = 1)
+        parser.add_argument("-d", "--date", nargs = 1)
+        args = parser.parse_args(sys.argv[2:])
+        if not args.guest or not args.bed or not args.date:
+            print "A guest name, bed name, and a date must be provided!"
+            print 'Try: book --help'
+            exit(1)
+        self.options = args
 
     def list(self):
         parser = argparse.ArgumentParser(description = 'List bookings based on given options')
