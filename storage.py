@@ -81,19 +81,16 @@ class Database():
                 {"NICKNAME": nick, "FIRST_NAME": first_name, "LAST_NAME": last_name})
         self.connection.commit()
 
-    def add_bed(self, name, capacity, room = None, feature = None):
+    def add_bed(self, name, capacity, room, feature = None):
         log.info('Adding bed [%s] to the database', name)
 
         # First check that the room and feature exists and fetch the corresponding ids
-        if room:
-            try:
-                room_id = self._get_room_id(room)
-            except ValueError as e:
-                print str(e)
-                log.warn(str(e))
-                exit(1)
-        else:
-            room_id = None
+        try:
+            room_id = self._get_room_id(room)
+        except ValueError as e:
+            print str(e)
+            log.warn(str(e))
+            exit(1)
 
         if feature:
             try:

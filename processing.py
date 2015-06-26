@@ -15,13 +15,13 @@ class Processing():
                 store.add_room(room_name)
 
         if options.bed:
-            if len(options.bed) < 2:
-                print "At least 2 options are required to register a bed"
+            if len(options.bed) < 3:
+                print "At least 3 options are required to register a bed"
                 print 'Try: book help'
                 exit(1)
             bed_name = options.bed[0]
             bed_capacity = options.bed[1]
-            bed_room = options.bed[2] if len(options.bed) >= 3 else None
+            bed_room = options.bed[2]
             bed_feature = options.bed[3] if len(options.bed) == 4 else None
             with Storage() as store:
                 store.add_bed(bed_name, bed_capacity, bed_room, bed_feature)

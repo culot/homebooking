@@ -34,7 +34,7 @@ The available commands are (when marked with *, command is not yet implemented):
   add         Add an entity to the booking system
               The available options are:
 
-              -b, --bed <name> <capacity> [room_name] [feature_name]
+              -b, --bed <name> <capacity> <room_name> [feature_name]
                   Add a bed, specifying a name for it, the name of
                   the room it resides, its capacity and an optional
                   feature name
