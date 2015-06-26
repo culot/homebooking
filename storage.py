@@ -296,6 +296,20 @@ class Database():
         for row in rows:
             print "Guest [%s], Bed [%s], Date [%s]" % (row["NICKNAME"], row["NAME"], row["DATE"])
 
+    def search_date(self, date):
+        log.info('Searching availabilities for [%s]', date)
+        query = '''
+            SELECT DISTINCT BEDS.NAME
+            FROM BEDS
+            WHERE NOT EXISTS
+                (SELECT * FROM BOOKINGS WHERE BED_ID = BEDS.BED_ID AND DATE = :DATE)
+            '''
+        cursor = self.connection.cursor()
+        cursor.execute(query,{"DATE": date})
+        rows = cursor.fetchall()
+        for row in rows:
+            print "Bed [%s]" % row["NAME"]
+
     def show_entity(self, entity):
         print "%s:" % entity
         cursor = self.connection.cursor()

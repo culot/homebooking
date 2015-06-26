@@ -9,6 +9,7 @@ TODO
   - add an utils module (with method to log and exit)
   - implement "collision" detection when registering a booking
   - allow to book for a range of dates
+  - allow to provide a minimum number of beds in the search command
 """
 
 __author__  = "Frederic Culot"

@@ -81,19 +81,23 @@ The available commands are (when marked with *, command is not yet implemented):
               -b, --bed <name>
               -d, --date <date>
 
-  *list*      List bookings based on user-provided options
+  list        List bookings based on user-provided options
               The available options are: 
 
-              -d, --date  <date>
+              -d, --date <date>
                   Search for the specified date
 
               -g, --guest <nickname>
                   Search for the specified nickname
 
-              -r, --room  <name>
+              -r, --room <name>
                   Search for the specified room
 
-  *search*    Search for availabilities
+  search      Search for beds availabilities
+              The following option is mandatory:
+
+              -d, --date <date>
+                  Search availabilities for the specified date
 
   show        Show entities stored in the booking system.
               If no options are specified then all entities are shown.
@@ -118,7 +122,6 @@ The available commands are (when marked with *, command is not yet implemented):
                   Display the number of objects stored in database
 
   dump        Dump database objects formatted as insert queries
-
 
 '''
 
@@ -185,7 +188,14 @@ The available commands are (when marked with *, command is not yet implemented):
         self.options = args
 
     def search(self):
-        pass
+        parser = argparse.ArgumentParser(description = 'Search for bed availabilities')
+        parser.add_argument("-d", "--date", nargs = 1)
+        args = parser.parse_args(sys.argv[2:])
+        if not args.date:
+            print "A date must be provided!"
+            print 'Try: book --help'
+            exit(1)
+        self.options = args
 
     def show(self):
         parser = argparse.ArgumentParser(description = 'Show objects found in the booking systems')

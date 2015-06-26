@@ -95,6 +95,12 @@ class Processing():
                 store.list_date(date)
 
     @staticmethod
+    def command_search(options):
+        date = options.date[0]
+        with Storage() as store:
+            store.search_date(date)
+
+    @staticmethod
     def command_show(options):
         if options.bed:
             with Storage() as store:
